@@ -9,7 +9,11 @@
       "Bash(pip install:*)",
       "Bash(timeout /t 3)",
       "Bash(timeout /t 5)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(tree:*)",
+      "Bash(ls -la \"c:\\\\Users\\\\ddmbi\\\\Desktop\\\\DocuMind\\\\documind-backend\\\\app\\\\routes\"\" && ls -la \"c:UsersddmbiDesktopDocuMinddocumind-backendappservices\"\")",
+      "Bash(ollama list:*)",
+      "Bash(del \"c:\\\\Users\\\\ddmbi\\\\Desktop\\\\DocuMind\\\\documind-backend\\\\app\\\\services\\\\gemini_client.py\")"
     ]
   }
 }

@@ -7,17 +7,22 @@ python-multipart
 supabase
 psycopg2-binary
 
-# AI & Document Processing
+# AI - Embedding (Local)
+sentence-transformers
+torch
+
+# AI - Chat (Ollama - uses HTTP)
+httpx
+
+# Document Processing
 pypdf
 langchain
 langchain-community
-google-generativeai
 
 # Security & Utils
 python-dotenv
 pydantic
 pydantic-settings
-httpx
 PyJWT
 python-jose
 passlib[bcrypt]

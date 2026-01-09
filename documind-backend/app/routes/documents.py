@@ -1,8 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Header
 from uuid import uuid4
-import asyncio
 from app.services.pdf_processor import pdf_processor
-from app.services.gemini_client import gemini_client
+from app.services.embedding_client import embedding_client
 from app.services.supabase_vector import vector_store
 from app.database import supabase
 
@@ -15,24 +14,18 @@ async def upload_document(
 ):
     """Upload and process a document (PDF/TXT)"""
     try:
-        # Read file content
         content = await file.read()
 
-        # Basic file type validation: accept PDF and TXT only
+        # Basic file type validation
         is_pdf = content.startswith(b"%PDF")
-        is_txt = False
-        try:
-            # treat small text files as txt
-            if file.filename.lower().endswith(".txt") or file.content_type == "text/plain":
-                is_txt = True
-        except Exception:
-            is_txt = False
+        is_txt = file.filename.lower().endswith(".txt") or file.content_type == "text/plain"
 
         if not (is_pdf or is_txt):
-            raise HTTPException(status_code=400, detail="Invalid file type: only PDF or TXT files are accepted")
+            raise HTTPException(status_code=400, detail="Only PDF or TXT files are accepted")
+
         doc_id = str(uuid4())
 
-        # Store document metadata in Supabase
+        # Store document metadata
         supabase.table("documents").insert({
             "id": doc_id,
             "user_id": x_user_id,
@@ -41,14 +34,12 @@ async def upload_document(
             "file_path": f"documents/{doc_id}.pdf"
         }).execute()
 
-        # Process file and extract chunks
+        # Extract chunks
         if is_txt:
-            # Simple TXT handling: create a single chunk
             try:
                 text = content.decode("utf-8", errors="ignore")
             except Exception:
                 text = ""
-
             chunks = [{
                 "chunk_number": 0,
                 "page_number": 0,
@@ -56,21 +47,12 @@ async def upload_document(
                 "source": file.filename
             }]
         else:
-            # PDF processing
             chunks = pdf_processor.extract_chunks(content, file.filename)
 
-        # Generate embeddings and store chunks
-        for i, chunk in enumerate(chunks):
-            # --- GÜNCELLEME: Bekleme süresini artıralım ---
-            if i > 0:  
-                # Ücretsiz katman için 1 saniye yetmeyebilir, 3 saniye yapalım
-                await asyncio.sleep(8) 
-
-            # Generate embedding
+        # Generate embeddings and store chunks (LOCAL - no rate limiting needed!)
+        for chunk in chunks:
             try:
-                embedding = gemini_client.embed_text(chunk['text'])
-                
-                # Store chunk with embedding
+                embedding = embedding_client.embed_text(chunk['text'])
                 vector_store.store_chunk(
                     document_id=doc_id,
                     chunk_text=chunk['text'],
@@ -79,12 +61,20 @@ async def upload_document(
                     embedding=embedding
                 )
             except Exception as e:
-                # --- BU SATIRI EKLE ---
-                print(f"KRİTİK HATA: {str(e)}") 
+                print(f"[upload] Chunk embedding error: {str(e)}")
                 import traceback
-                traceback.print_exc() # Hatanın hangi satırda olduğunu tam olarak gösterir
-                # ----------------------
+                traceback.print_exc()
                 raise HTTPException(status_code=500, detail=str(e))
+
+        return {
+            "id": doc_id,
+            "filename": file.filename,
+            "chunks_count": len(chunks),
+            "status": "ready"
+        }
+
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -110,7 +100,6 @@ async def delete_document(
 ):
     """Delete a document and its chunks"""
     try:
-        # Verify ownership
         doc = supabase.table("documents").select("user_id").eq(
             "id", document_id
         ).execute()
@@ -118,7 +107,6 @@ async def delete_document(
         if not doc.data or doc.data[0]['user_id'] != x_user_id:
             raise HTTPException(status_code=403, detail="Unauthorized")
 
-        # Delete document (cascades to chunks via foreign key)
         supabase.table("documents").delete().eq(
             "id", document_id
         ).execute()

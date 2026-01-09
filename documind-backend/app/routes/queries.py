@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from uuid import uuid4
-from app.services.gemini_client import gemini_client
+from app.services.embedding_client import embedding_client
+from app.services.ollama_client import ollama_client
 from app.services.supabase_vector import vector_store
 from app.database import supabase
 
@@ -21,10 +22,10 @@ async def query_documents(
     try:
         query_id = str(uuid4())
 
-        # Generate embedding for the question
-        question_embedding = gemini_client.embed_text(req.question)
+        # Generate embedding for the question (LOCAL - fast!)
+        question_embedding = embedding_client.embed_text(req.question)
 
-        # Search for similar chunks using vector similarity
+        # Search for similar chunks
         search_results = await vector_store.vector_search(
             query_embedding=question_embedding,
             document_ids=req.document_ids,
@@ -45,8 +46,8 @@ async def query_documents(
             for r in search_results
         ])
 
-        # Generate answer using Gemini
-        answer = await gemini_client.generate_answer(
+        # Generate answer using Ollama (LOCAL!)
+        answer = await ollama_client.generate_answer(
             question=req.question,
             context=context
         )

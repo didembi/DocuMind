@@ -13,10 +13,12 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str
     SUPABASE_SERVICE_ROLE_KEY: str
 
-    # Gemini
-    GEMINI_API_KEY: str
-    GEMINI_EMBEDDING_MODEL: str = "models/embedding-001"
-    GEMINI_CHAT_MODEL: str = "gemini-pro"
+    # Embedding (Sentence-Transformers - Local)
+    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"  # 384 dimensions, fast & good
+
+    # Ollama (Local LLM)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "gemma3:4b"  # Your installed model
 
     # JWT
     JWT_SECRET_KEY: str
