@@ -10,6 +10,7 @@ import { AddSourceDialog } from '@/components/notebook/AddSourceDialog';
 import { CreateNotebookDialog } from '@/components/home/CreateNotebookDialog';
 import { useNotebooksContext } from '@/hooks/NotebooksContext';
 import type { Message } from '@/types';
+import { api } from '@/services/api';
 
 export function Notebook() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +27,7 @@ export function Notebook() {
     return <Navigate to="/" replace />;
   }
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -36,16 +37,46 @@ export function Notebook() {
 
     setMessages((prev) => [...prev, userMessage]);
 
-    // Simulate assistant response
-    setTimeout(() => {
+    try {
+      // DEBUG: Log notebook sources
+      console.log('🔍 Notebook sources:', notebook.sources);
+
+      // Get document IDs from sources
+      const documentIds = notebook.sources
+        .filter((s) => s.documentId) // Only include sources with backend IDs
+        .map((s) => s.documentId!);
+
+      console.log('🔍 Document IDs found:', documentIds);
+
+      if (documentIds.length === 0) {
+        throw new Error('Bu not defterinde yüklenmiş belge yok');
+      }
+
+      // Query backend AI
+      const response = await api.queryDocuments(content, documentIds);
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Bu bir demo yanıtıdır. Backend entegrasyonu yapıldığında, gerçek AI yanıtları burada görünecek.',
+        content: response.answer,
+        sources: response.sources,
         createdAt: new Date(),
       };
+
       setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+    } catch (error) {
+      toast.error(`Bir hata oluştu: ${error}`);
+
+      // Add error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Üzgünüm, cevap oluştururken bir hata oluştu. Lütfen tekrar deneyin.',
+        createdAt: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    }
   };
 
   const handleAddSource = (sources: Array<{ type: 'file' | 'text'; name: string; content: string }>) => {

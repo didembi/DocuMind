@@ -8,7 +8,7 @@ export function useNotebooks() {
   const createNotebook = (
     title: string,
     accent: NotebookAccent | undefined,
-    sources: Array<{ type: 'file' | 'text'; name: string; content: string }>
+    sources: Array<{ type: 'file' | 'text'; name: string; content: string; documentId?: string }>
   ) => {
     const newNotebook: Notebook = {
       id: Date.now().toString(),
@@ -20,6 +20,7 @@ export function useNotebooks() {
         name: source.name,
         preview: source.content.slice(0, 200),
         content: source.content,
+        documentId: source.documentId, // Backend document ID
         createdAt: new Date(),
       })),
       updatedAt: new Date(),
@@ -45,7 +46,7 @@ export function useNotebooks() {
 
   const addSource = (
     notebookId: string,
-    sources: Array<{ type: 'file' | 'text'; name: string; content: string }>
+    sources: Array<{ type: 'file' | 'text'; name: string; content: string; documentId?: string }>
   ) => {
     setNotebooks((prev) =>
       prev.map((notebook) => {
@@ -56,6 +57,7 @@ export function useNotebooks() {
             name: source.name,
             preview: source.content.slice(0, 200),
             content: source.content,
+            documentId: source.documentId, // Backend document ID
             createdAt: new Date(),
           }));
 

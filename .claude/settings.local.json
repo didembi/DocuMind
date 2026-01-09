@@ -3,7 +3,13 @@
     "allow": [
       "Bash(npm install)",
       "Bash(npm install:*)",
-      "Bash(npx tailwindcss:*)"
+      "Bash(npx tailwindcss:*)",
+      "Bash(python:*)",
+      "Bash(pip uninstall:*)",
+      "Bash(pip install:*)",
+      "Bash(timeout /t 3)",
+      "Bash(timeout /t 5)",
+      "Bash(curl:*)"
     ]
   }
 }

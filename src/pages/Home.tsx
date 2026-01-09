@@ -29,7 +29,7 @@ export function Home() {
   const handleCreateNotebook = (
     title: string,
     accent: any,
-    sources: Array<{ type: 'file' | 'text'; name: string; content: string }>
+    sources: Array<{ type: 'file' | 'text'; name: string; content: string; documentId?: string }>
   ) => {
     const id = createNotebook(title, accent, sources);
     toast.success('Not defteri oluşturuldu');

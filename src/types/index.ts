@@ -6,6 +6,7 @@ export type Source = {
   name: string;
   preview: string;      // first 200 chars
   content: string;      // full content
+  documentId?: string;  // Backend document ID (for API calls)
   createdAt: Date;
 };
 
@@ -21,5 +22,10 @@ export type Message = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  sources?: Array<{
+    document_id: string;
+    page_number: number;
+    similarity: number;
+  }>;
   createdAt: Date;
 };

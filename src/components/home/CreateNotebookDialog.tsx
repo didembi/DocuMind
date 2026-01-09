@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Cloud, FileText, X } from 'lucide-react';
+import { Cloud, FileText, X, Loader2, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -14,11 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import type { NotebookAccent } from '@/types';
 import { cn } from '@/lib/utils';
+import { api } from '@/services/api';
 
 interface CreateNotebookDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreate: (title: string, accent: NotebookAccent | undefined, sources: Array<{ type: 'file' | 'text'; name: string; content: string }>) => void;
+  onCreate: (title: string, accent: NotebookAccent | undefined, sources: Array<{ type: 'file' | 'text'; name: string; content: string; documentId?: string }>) => void;
 }
 
 export function CreateNotebookDialog({
@@ -29,7 +31,7 @@ export function CreateNotebookDialog({
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState('');
   const [accent, setAccent] = useState<NotebookAccent | undefined>('purple');
-  const [files, setFiles] = useState<Array<{ name: string; file: File }>>([]);
+  const [files, setFiles] = useState<Array<{ name: string; file: File; documentId?: string; uploading?: boolean }>>([]);
   const [textContent, setTextContent] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
@@ -62,38 +64,83 @@ export function CreateNotebookDialog({
   const handleCreate = async () => {
     setIsCreating(true);
 
-    // Simulate creation delay
-    await new Promise(resolve => setTimeout(resolve, 600));
+    try {
+      console.log('📝 Creating notebook with files:', files);
 
-    const sources: Array<{ type: 'file' | 'text'; name: string; content: string }> = [];
+      const sources: Array<{ type: 'file' | 'text'; name: string; content: string; documentId?: string }> = [];
 
-    // Add file sources
-    files.forEach((file) => {
-      sources.push({
-        type: 'file',
-        name: file.name,
-        content: `Content from ${file.name}`, // Mock content
+      // Add file sources with documentId
+      files.forEach((file) => {
+        console.log('📄 Processing file:', file);
+        if (file.documentId) {
+          sources.push({
+            type: 'file',
+            name: file.name,
+            content: `Document ID: ${file.documentId}`,
+            documentId: file.documentId,
+          });
+          console.log('✅ Added to sources with documentId:', file.documentId);
+        } else {
+          console.warn('⚠️ File has no documentId:', file.name);
+        }
       });
-    });
 
-    // Add text source
-    if (textContent.trim()) {
-      sources.push({
-        type: 'text',
-        name: 'Metin kaynağı',
-        content: textContent.trim(),
-      });
+      // Add text source (metin kaynağı backend'e upload edilmeyecek, sadece frontend'te kalacak)
+      if (textContent.trim()) {
+        sources.push({
+          type: 'text',
+          name: 'Metin kaynağı',
+          content: textContent.trim(),
+        });
+      }
+
+      console.log('📦 Final sources array:', sources);
+      onCreate(title.trim(), accent, sources);
+      onOpenChange(false);
+    } catch (error) {
+      toast.error('Not defteri oluşturulamadı');
+    } finally {
+      setIsCreating(false);
     }
-
-    onCreate(title.trim(), accent, sources);
-    setIsCreating(false);
-    onOpenChange(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
-    const newFiles = selectedFiles.map((file) => ({ name: file.name, file }));
-    setFiles([...files, ...newFiles]);
+
+    // Add files to state immediately with uploading flag
+    const newFiles = selectedFiles.map((file) => ({
+      name: file.name,
+      file,
+      uploading: true,
+    }));
+    setFiles((prev) => [...prev, ...newFiles]);
+
+    // Upload each file to backend
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      try {
+        console.log('📤 Uploading file:', file.name);
+        const response = await api.uploadDocument(file);
+        console.log('✅ Upload response:', response);
+
+        // Update file with documentId
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.name === file.name && f.uploading
+              ? { ...f, documentId: response.id, uploading: false }
+              : f
+          )
+        );
+
+        console.log('✅ Updated files state with documentId:', response.id);
+        toast.success(`${file.name} yüklendi (${response.chunks_count} chunk)`);
+      } catch (error) {
+        console.error('❌ Upload error:', error);
+        toast.error(`${file.name} yüklenemedi: ${error}`);
+        // Remove failed file
+        setFiles((prev) => prev.filter((f) => !(f.name === file.name && f.uploading)));
+      }
+    }
   };
 
   const removeFile = (index: number) => {
@@ -186,14 +233,24 @@ export function CreateNotebookDialog({
                       className="flex items-center justify-between glass-subtle p-3 rounded-lg"
                     >
                       <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-purple-400" />
+                        {file.uploading ? (
+                          <Loader2 className="h-4 w-4 text-purple-400 animate-spin" />
+                        ) : file.documentId ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-400" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-purple-400" />
+                        )}
                         <span className="text-sm">{file.name}</span>
+                        {file.uploading && (
+                          <span className="text-xs text-muted-foreground">Yükleniyor...</span>
+                        )}
                       </div>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => removeFile(index)}
                         className="h-6 w-6"
+                        disabled={file.uploading}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -248,9 +305,17 @@ export function CreateNotebookDialog({
             <Button
               variant="gradient"
               onClick={handleCreate}
-              disabled={isCreating || (files.length === 0 && !textContent.trim())}
+              disabled={
+                isCreating ||
+                (files.length === 0 && !textContent.trim()) ||
+                files.some((f) => f.uploading) // Disable if any file is still uploading
+              }
             >
-              {isCreating ? 'Oluşturuluyor...' : 'Not defterini oluştur'}
+              {files.some((f) => f.uploading)
+                ? 'Yükleniyor...'
+                : isCreating
+                ? 'Oluşturuluyor...'
+                : 'Not defterini oluştur'}
             </Button>
           )}
         </DialogFooter>

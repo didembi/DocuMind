@@ -1,0 +1,23 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Database & Vectors
+supabase
+psycopg2-binary
+
+# AI & Document Processing
+pypdf
+langchain
+langchain-community
+google-generativeai
+
+# Security & Utils
+python-dotenv
+pydantic
+pydantic-settings
+httpx
+PyJWT
+python-jose
+passlib[bcrypt]
