@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Topbar } from '@/components/layout/Topbar';
@@ -14,6 +14,7 @@ export function Home() {
   const navigate = useNavigate();
   const {
     notebooks,
+    isLoading,
     createNotebook,
     deleteNotebook,
     updateNotebookTitle,
@@ -65,7 +66,12 @@ export function Home() {
       <Topbar onCreateNotebook={() => setCreateDialogOpen(true)} />
 
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {notebooks.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Belgeler yükleniyor...</p>
+          </div>
+        ) : notebooks.length === 0 ? (
           <EmptyState
             icon={BookOpen}
             title="Henüz not defterin yok"

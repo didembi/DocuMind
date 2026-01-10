@@ -15,7 +15,7 @@ class PDFProcessor:
         )
 
     def extract_chunks(self, file_bytes: bytes, filename: str) -> List[Dict]:
-        """Extract and chunk PDF content"""
+        """Extract and chunk PDF content with location metadata"""
         try:
             # Save to temporary file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
@@ -29,14 +29,17 @@ class PDFProcessor:
             # Split into chunks
             chunks = self.splitter.split_documents(documents)
 
-            # Format result
+            # Format result with location metadata
             result = []
             for i, chunk in enumerate(chunks):
                 result.append({
                     "chunk_number": i,
+                    "chunk_index": i,
                     "page_number": chunk.metadata.get("page", 0),
                     "text": chunk.page_content,
-                    "source": filename
+                    "source": filename,
+                    "line_start": None,  # PDF'lerde satır takibi güvenilir değil
+                    "line_end": None
                 })
 
             # Cleanup
@@ -45,5 +48,46 @@ class PDFProcessor:
             return result
         except Exception as e:
             raise Exception(f"PDF processing failed: {str(e)}")
+
+    def extract_text_chunks(self, text: str, filename: str) -> List[Dict]:
+        """Extract and chunk plain text content with line tracking"""
+        try:
+            lines = text.split('\n')
+
+            # Split text into chunks
+            chunks = self.splitter.split_text(text)
+
+            result = []
+            current_line = 0
+
+            for i, chunk_text in enumerate(chunks):
+                # Find line_start
+                line_start = current_line
+
+                # Count lines in this chunk
+                chunk_lines = chunk_text.count('\n')
+                line_end = line_start + chunk_lines
+
+                # Track position in original text
+                chunk_pos = text.find(chunk_text)
+                if chunk_pos >= 0:
+                    line_start = text[:chunk_pos].count('\n')
+                    line_end = line_start + chunk_lines
+
+                result.append({
+                    "chunk_number": i,
+                    "chunk_index": i,
+                    "page_number": 0,  # TXT: 0 = sayfa yok, line_start/end kullan
+                    "text": chunk_text,
+                    "source": filename,
+                    "line_start": line_start,
+                    "line_end": line_end
+                })
+
+                current_line = line_end + 1
+
+            return result
+        except Exception as e:
+            raise Exception(f"Text processing failed: {str(e)}")
 
 pdf_processor = PDFProcessor()
