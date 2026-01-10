@@ -141,7 +141,7 @@ export const api = {
     save: boolean = false
   ): Promise<SummaryResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 dakika timeout
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 dakika timeout
 
     try {
       const response = await fetch(
@@ -210,16 +210,13 @@ export const api = {
 
   // ==================== QUERY ENDPOINTS ====================
 
-  /**
-   * Ask a question about documents (semantic search)
-   */
   async queryDocuments(
     question: string,
     documentIds: string[],
     searchLimit: number = 5
   ): Promise<QueryResponse> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 dakika timeout
+    const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 dakika timeout
 
     try {
       const response = await fetch(`${API_URL}/query`, {
@@ -296,9 +293,6 @@ export const api = {
 
   // ==================== HEALTH CHECK ====================
 
-  /**
-   * Check backend health
-   */
   async healthCheck(): Promise<{ status: string; version: string }> {
     const response = await fetch('http://localhost:8000/health');
 

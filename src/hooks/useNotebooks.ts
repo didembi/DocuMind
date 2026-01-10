@@ -75,8 +75,8 @@ export function useNotebooks() {
       const newNotebooks: Notebook[] = [];
 
       for (const doc of response.documents) {
-        // Sadece 'ready' durumundaki ve daha once eklenmemis belgeleri ekle
-        if (doc.status === 'ready' && !syncedDocs.has(doc.id)) {
+        // Daha once eklenmemis tum belgeleri ekle (status farketmez)
+        if (!syncedDocs.has(doc.id)) {
           // Rastgele renk sec
           const randomAccent = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)];
 

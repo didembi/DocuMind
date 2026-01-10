@@ -83,18 +83,28 @@ async def query_documents(
 
         # Build context from search results with location info
         context_parts = []
+        sources_hint_parts = []
+
         for r in search_results:
+            doc_title = doc_titles.get(r['document_id'], 'Belge')
             location_info = ""
-            if r.get('page_number') is not None:
-                location_info = f"Sayfa {r['page_number']}"
+
+            page_num = r.get('page_number')
+            if page_num is not None and page_num > 0:
+                location_info = f"Sayfa {page_num}"
             elif r.get('line_start') is not None:
                 location_info = f"Satır {r['line_start']}-{r['line_end']}"
             else:
                 location_info = f"Bölüm {r.get('chunk_index', r.get('chunk_number', 0))}"
 
-            context_parts.append(f"[{location_info}]\n{r['chunk_text']}")
+            # Context'e belge adını da ekle
+            context_parts.append(f"[Kaynak: {doc_title}, {location_info}]\n{r['chunk_text']}")
+
+            # Sources hint for the prompt
+            sources_hint_parts.append(f"• {doc_title} - {location_info}")
 
         context = "\n\n".join(context_parts)
+        sources_hint = "\n".join(sources_hint_parts)
 
         print(f"[query] Context built, length: {len(context)} chars")
         print(f"[query] Calling Ollama...")
@@ -102,7 +112,8 @@ async def query_documents(
         # Generate answer using Ollama (LOCAL!)
         answer = await ollama_client.generate_answer(
             question=req.question,
-            context=context
+            context=context,
+            sources_hint=sources_hint
         )
         print(f"[query] Ollama response received: {answer[:100]}...")
 

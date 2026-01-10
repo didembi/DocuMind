@@ -70,12 +70,12 @@ export function Notebook() {
         documentIds.map((docId) => api.getDocumentStatus(docId).catch(() => null))
       );
 
-      const allReady = statusChecks.every((status) => status?.ready === true);
+      const allReady = statusChecks.every((s) => s?.status === "ready");
       setDocumentsReady(allReady);
 
       // If not ready, poll again in 2 seconds
       if (!allReady) {
-        setTimeout(checkDocumentStatus, 2000);
+        setTimeout(checkDocumentStatus, 4000);
       }
     } catch (error) {
       console.error('Failed to check document status:', error);
@@ -106,6 +106,11 @@ export function Notebook() {
   };
 
   const handleSendMessage = async (content: string) => {
+    if (!documentsReady) {
+      toast.info("Belgeler hazırlanıyor (processing). Hazır olunca tekrar deneyin.");
+      return;
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -141,7 +146,7 @@ export function Notebook() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Uzgunum, cevap olustururken bir hata olustu. Lutfen tekrar deneyin.',
+        content: 'Üzgünüm, cevap oluştururken bir hata oluştu. Lütfen tekrar deneyin.',
         createdAt: new Date(),
       };
 
@@ -355,7 +360,7 @@ export function Notebook() {
       addSource(id, sources);
       toast.success('Kaynak eklendi');
       // Re-check document status after adding
-      setTimeout(checkDocumentStatus, 500);
+      setTimeout(checkDocumentStatus, 4000);
     }
   };
 
