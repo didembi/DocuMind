@@ -1,5 +1,6 @@
 from app.database import supabase
 from typing import List, Dict, Optional
+import math
 from uuid import uuid4
 
 class SupabaseVector:
@@ -64,8 +65,53 @@ class SupabaseVector:
             print(f"[vector] Found {len(response.data)} chunks")
             return response.data
         except Exception as e:
+            # If RPC fails (for example due to overloaded function ambiguity),
+            # fall back to a local similarity computation using stored embeddings.
             print(f"[vector] Search error: {str(e)}")
-            raise Exception(f"Vector search failed: {str(e)}")
+            err = str(e)
+            try:
+                print("[vector] Attempting local fallback search...")
+
+                # Fetch chunks for the given documents
+                resp = supabase.table("document_chunks").select(
+                    "id, document_id, chunk_text, chunk_number, chunk_index, page_number, line_start, line_end, embedding"
+                ).in_("document_id", document_ids).execute()
+
+                rows = resp.data or []
+
+                # Compute cosine similarity locally
+                def cosine(a: List[float], b: List[float]) -> float:
+                    try:
+                        dot = 0.0
+                        na = 0.0
+                        nb = 0.0
+                        for x, y in zip(a, b):
+                            dot += x * y
+                            na += x * x
+                            nb += y * y
+                        if na == 0 or nb == 0:
+                            return 0.0
+                        return dot / (math.sqrt(na) * math.sqrt(nb))
+                    except Exception:
+                        return 0.0
+
+                scored = []
+                for r in rows:
+                    emb = r.get('embedding')
+                    if not emb:
+                        continue
+                    sim = cosine(query_embedding, emb)
+                    r['similarity'] = sim
+                    scored.append(r)
+
+                scored.sort(key=lambda x: x.get('similarity', 0), reverse=True)
+                result = scored[:limit]
+
+                print(f"[vector] Local fallback found {len(result)} chunks")
+                return result
+            except Exception as e2:
+                print(f"[vector] Local fallback failed: {str(e2)}")
+                raise Exception(f"Vector search failed: {err}")
 
     async def keyword_search(
         self,
