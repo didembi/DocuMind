@@ -1,4 +1,5 @@
 import { Plus, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 interface TopbarProps {
@@ -10,12 +11,12 @@ export function Topbar({ onCreateNotebook }: TopbarProps) {
     <header className="sticky top-0 z-40 w-full border-b border-white/10 glass-subtle">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center">
+          {/* Logo - Anasayfaya link */}
+          <Link to="/" className="flex items-center hover:opacity-80 transition-opacity">
             <h1 className="text-xl font-bold gradient-text">
               DocuMind
             </h1>
-          </div>
+          </Link>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
