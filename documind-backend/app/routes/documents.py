@@ -13,6 +13,7 @@ router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
 @router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...),
+    notebook_id: Optional[str] = Query(None, description="Notebook ID to associate document with"),
     x_user_id: str = Header(..., description="User ID from frontend")
 ):
     """Upload and process a document (PDF/TXT) with status management"""
@@ -29,14 +30,18 @@ async def upload_document(
             raise HTTPException(status_code=400, detail="Only PDF or TXT files are accepted")
 
         # Store document metadata with status=processing
-        supabase.table("documents").insert({
+        doc_data = {
             "id": doc_id,
             "user_id": x_user_id,
             "filename": file.filename,
             "file_size": len(content),
             "file_path": f"documents/{doc_id}.pdf" if is_pdf else f"documents/{doc_id}.txt",
             "status": "processing"  # Initially processing
-        }).execute()
+        }
+        if notebook_id:
+            doc_data["notebook_id"] = notebook_id
+
+        supabase.table("documents").insert(doc_data).execute()
 
         try:
             # Extract chunks with location metadata

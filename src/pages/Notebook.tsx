@@ -12,45 +12,53 @@ import { useNotebooksContext } from '@/hooks/NotebooksContext';
 import type { Message, MessageSource } from '@/types';
 import { api } from '@/services/api';
 
-// LocalStorage'dan mesajlari yukle
-function loadMessages(notebookId: string): Message[] {
-  try {
-    const stored = localStorage.getItem(`documind_messages_${notebookId}`);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed.map((msg: any) => ({
-        ...msg,
-        createdAt: new Date(msg.createdAt),
-      }));
-    }
-  } catch (error) {
-    console.error('Failed to load messages:', error);
-  }
-  return [];
-}
-
-// LocalStorage'a mesajlari kaydet
-function saveMessages(notebookId: string, messages: Message[]) {
-  try {
-    localStorage.setItem(`documind_messages_${notebookId}`, JSON.stringify(messages));
-  } catch (error) {
-    console.error('Failed to save messages:', error);
-  }
-}
-
 export function Notebook() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getNotebook, addSource, removeSource, createNotebook } = useNotebooksContext();
 
-  // Mesajlari localStorage'dan yukle
-  const [messages, setMessages] = useState<Message[]>(() => (id ? loadMessages(id) : []));
+  const [messages, setMessages] = useState<Message[]>([]);
   const [addSourceDialogOpen, setAddSourceDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [documentsReady, setDocumentsReady] = useState(true);
 
   const notebook = id ? getNotebook(id) : null;
+
+  // Backend'den mesajlari yukle
+  const loadMessages = useCallback(async () => {
+    if (!id) return;
+
+    try {
+      const response = await api.getNotebookMessages(id);
+      const loadedMessages: Message[] = response.messages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        sources: msg.sources || undefined,
+        createdAt: new Date(msg.created_at),
+      }));
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  }, [id]);
+
+  // Mesaji backend'e kaydet
+  const saveMessage = useCallback(async (message: Message) => {
+    if (!id) return;
+
+    try {
+      await api.saveMessage(id, message.role, message.content, message.sources);
+    } catch (error) {
+      console.error('Failed to save message:', error);
+    }
+  }, [id]);
+
+  // Sayfa yuklendiginde mesajlari cek
+  useEffect(() => {
+    loadMessages();
+  }, [loadMessages]);
 
   // Check document status on mount and when sources change
   const checkDocumentStatus = useCallback(async () => {
@@ -73,7 +81,7 @@ export function Notebook() {
       const allReady = statusChecks.every((s) => s?.status === "ready");
       setDocumentsReady(allReady);
 
-      // If not ready, poll again in 2 seconds
+      // If not ready, poll again in 4 seconds
       if (!allReady) {
         setTimeout(checkDocumentStatus, 4000);
       }
@@ -85,13 +93,6 @@ export function Notebook() {
   useEffect(() => {
     checkDocumentStatus();
   }, [checkDocumentStatus]);
-
-  // Mesajlar degistiginde localStorage'a kaydet
-  useEffect(() => {
-    if (id && messages.length > 0) {
-      saveMessages(id, messages);
-    }
-  }, [id, messages]);
 
   if (!notebook) {
     return <Navigate to="/" replace />;
@@ -119,6 +120,7 @@ export function Notebook() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    saveMessage(userMessage); // Backend'e kaydet
     setIsLoading(true);
 
     try {
@@ -140,6 +142,7 @@ export function Notebook() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      saveMessage(assistantMessage); // Backend'e kaydet
     } catch (error) {
       toast.error(`Bir hata olustu: ${error}`);
 
@@ -173,6 +176,7 @@ export function Notebook() {
       createdAt: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
+    saveMessage(userMessage);
 
     try {
       // Generate summary for first document (can be extended for multiple)
@@ -199,6 +203,7 @@ export function Notebook() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      saveMessage(assistantMessage);
 
       if (response.cached) {
         toast.info('Onbellekteki ozet kullanildi');
@@ -236,6 +241,7 @@ export function Notebook() {
       createdAt: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
+    saveMessage(userMessage);
 
     try {
       const response = await api.generateSummary(documentIds[0], 'long', true);
@@ -261,6 +267,7 @@ export function Notebook() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      saveMessage(assistantMessage);
 
       if (response.cached) {
         toast.info('Onbellekteki ozet kullanildi');
@@ -298,6 +305,7 @@ export function Notebook() {
       createdAt: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
+    saveMessage(userMessage);
 
     try {
       // Search in first document (can be extended for multiple)
@@ -339,6 +347,7 @@ export function Notebook() {
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+      saveMessage(assistantMessage);
     } catch (error) {
       toast.error(`Arama basarisiz: ${error}`);
 

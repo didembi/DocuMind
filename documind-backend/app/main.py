@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routes import documents, queries
+from app.routes import documents, queries, notebooks
 
 app = FastAPI(
     title="DocuMind API",
@@ -28,6 +28,7 @@ app.add_middleware(
 # Include routers
 app.include_router(documents.router)
 app.include_router(queries.router)
+app.include_router(notebooks.router)
 
 @app.get("/")
 async def root():

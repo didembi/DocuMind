@@ -1,6 +1,6 @@
 // DocuMind Backend API Client
 
-import type { SummaryResponse, KeywordSearchResult, MessageSource } from '@/types';
+import type { SummaryResponse, KeywordSearchResult, MessageSource, NotebookAccent } from '@/types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 const USER_ID = 'demo_user'; // MVP icin sabit user ID
@@ -10,6 +10,26 @@ export interface UploadResponse {
   filename: string;
   chunks_count: number;
   status: string;
+}
+
+// Notebook Types
+export interface NotebookResponse {
+  id: string;
+  user_id: string;
+  title: string;
+  accent: NotebookAccent;
+  created_at: string;
+  updated_at: string;
+  document_count?: number;
+  documents?: Document[];
+}
+
+export interface ChatMessageResponse {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sources: MessageSource[] | null;
+  created_at: string;
 }
 
 export interface Document {
@@ -59,11 +79,15 @@ export const api = {
   /**
    * Upload a document (PDF/TXT) to backend for processing
    */
-  async uploadDocument(file: File): Promise<UploadResponse> {
+  async uploadDocument(file: File, notebookId?: string): Promise<UploadResponse> {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await fetch(`${API_URL}/documents/upload`, {
+    const url = notebookId
+      ? `${API_URL}/documents/upload?notebook_id=${notebookId}`
+      : `${API_URL}/documents/upload`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'x-user-id': USER_ID,
@@ -286,6 +310,210 @@ export const api = {
 
     if (!response.ok) {
       throw new Error('Failed to fetch queries');
+    }
+
+    return response.json();
+  },
+
+  // ==================== NOTEBOOK ENDPOINTS ====================
+
+  /**
+   * Create a new notebook
+   */
+  async createNotebook(title: string, accent: NotebookAccent = 'purple'): Promise<NotebookResponse> {
+    const response = await fetch(`${API_URL}/notebooks/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': USER_ID,
+      },
+      body: JSON.stringify({ title, accent }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to create notebook' }));
+      throw new Error(error.detail || 'Failed to create notebook');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * List all notebooks for current user
+   */
+  async listNotebooks(): Promise<{ notebooks: NotebookResponse[]; total: number }> {
+    const response = await fetch(`${API_URL}/notebooks/`, {
+      headers: {
+        'x-user-id': USER_ID,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch notebooks');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Get a single notebook with its documents
+   */
+  async getNotebook(notebookId: string): Promise<NotebookResponse> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}`, {
+      headers: {
+        'x-user-id': USER_ID,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Notebook not found' }));
+      throw new Error(error.detail || 'Notebook not found');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Update notebook title or accent
+   */
+  async updateNotebook(
+    notebookId: string,
+    updates: { title?: string; accent?: NotebookAccent }
+  ): Promise<NotebookResponse> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': USER_ID,
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to update notebook' }));
+      throw new Error(error.detail || 'Failed to update notebook');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Delete a notebook
+   */
+  async deleteNotebook(notebookId: string): Promise<{ status: string; id: string }> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}`, {
+      method: 'DELETE',
+      headers: {
+        'x-user-id': USER_ID,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to delete notebook' }));
+      throw new Error(error.detail || 'Failed to delete notebook');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Add a document to a notebook
+   */
+  async addDocumentToNotebook(notebookId: string, documentId: string): Promise<{ status: string }> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}/documents/${documentId}`, {
+      method: 'POST',
+      headers: {
+        'x-user-id': USER_ID,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to add document' }));
+      throw new Error(error.detail || 'Failed to add document');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Remove a document from a notebook
+   */
+  async removeDocumentFromNotebook(notebookId: string, documentId: string): Promise<{ status: string }> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}/documents/${documentId}`, {
+      method: 'DELETE',
+      headers: {
+        'x-user-id': USER_ID,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to remove document' }));
+      throw new Error(error.detail || 'Failed to remove document');
+    }
+
+    return response.json();
+  },
+
+  // ==================== CHAT MESSAGE ENDPOINTS ====================
+
+  /**
+   * Get chat messages for a notebook
+   */
+  async getNotebookMessages(notebookId: string, limit: number = 100): Promise<{ messages: ChatMessageResponse[]; total: number }> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}/messages?limit=${limit}`, {
+      headers: {
+        'x-user-id': USER_ID,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to fetch messages' }));
+      throw new Error(error.detail || 'Failed to fetch messages');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Save a chat message to a notebook
+   */
+  async saveMessage(
+    notebookId: string,
+    role: 'user' | 'assistant',
+    content: string,
+    sources?: MessageSource[]
+  ): Promise<ChatMessageResponse> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-id': USER_ID,
+      },
+      body: JSON.stringify({ role, content, sources }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to save message' }));
+      throw new Error(error.detail || 'Failed to save message');
+    }
+
+    return response.json();
+  },
+
+  /**
+   * Clear all messages in a notebook
+   */
+  async clearMessages(notebookId: string): Promise<{ status: string }> {
+    const response = await fetch(`${API_URL}/notebooks/${notebookId}/messages`, {
+      method: 'DELETE',
+      headers: {
+        'x-user-id': USER_ID,
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Failed to clear messages' }));
+      throw new Error(error.detail || 'Failed to clear messages');
     }
 
     return response.json();
