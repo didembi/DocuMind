@@ -20,10 +20,14 @@ async def query_documents(
 ):
     """Ask a question about documents"""
     try:
+        print(f"[query] Received question: {req.question}")
+        print(f"[query] Document IDs: {req.document_ids}")
+
         query_id = str(uuid4())
 
         # Generate embedding for the question (LOCAL - fast!)
         question_embedding = embedding_client.embed_text(req.question)
+        print(f"[query] Embedding generated, length: {len(question_embedding)}")
 
         # Search for similar chunks
         search_results = await vector_store.vector_search(
@@ -46,11 +50,15 @@ async def query_documents(
             for r in search_results
         ])
 
+        print(f"[query] Context built, length: {len(context)} chars")
+        print(f"[query] Calling Ollama...")
+
         # Generate answer using Ollama (LOCAL!)
         answer = await ollama_client.generate_answer(
             question=req.question,
             context=context
         )
+        print(f"[query] Ollama response received: {answer[:100]}...")
 
         # Store query in database
         supabase.table("queries").insert({

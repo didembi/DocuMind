@@ -5,7 +5,7 @@ import tempfile
 import os
 
 class PDFProcessor:
-    def __init__(self, chunk_size: int = 6000, chunk_overlap: int = 50):
+    def __init__(self, chunk_size: int = 8000, chunk_overlap: int = 50):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.splitter = RecursiveCharacterTextSplitter(

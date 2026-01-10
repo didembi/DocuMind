@@ -103,25 +103,38 @@ export const api = {
     documentIds: string[],
     searchLimit: number = 5
   ): Promise<QueryResponse> {
-    const response = await fetch(`${API_URL}/query`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-user-id': USER_ID,
-      },
-      body: JSON.stringify({
-        question,
-        document_ids: documentIds,
-        search_limit: searchLimit,
-      }),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 dakika timeout
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Query failed' }));
-      throw new Error(error.detail || 'Query failed');
+    try {
+      const response = await fetch(`${API_URL}/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': USER_ID,
+        },
+        body: JSON.stringify({
+          question,
+          document_ids: documentIds,
+          search_limit: searchLimit,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Query failed' }));
+        throw new Error(error.detail || 'Query failed');
+      }
+
+      return response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('İstek zaman aşımına uğradı. Lütfen tekrar deneyin.');
+      }
+      throw error;
     }
-
-    return response.json();
   },
 
   /**

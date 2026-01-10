@@ -7,6 +7,8 @@ class OllamaClient:
     def __init__(self):
         self.base_url = settings.OLLAMA_BASE_URL
         self.model = settings.OLLAMA_MODEL
+        self.smalltalk = {"selam", "merhaba", "hello", "hi", "naber", "nasılsın",
+                          "teşekkürler", "sağol", "hey", "mrb", "slm"}
 
     async def generate_answer(
         self,
@@ -16,10 +18,20 @@ class OllamaClient:
     ) -> str:
         """Generate answer using Ollama"""
         try:
+            q = question.strip().lower()
+
+            # Selamlaşma istisnası
+            if q in self.smalltalk:
+                return "Merhaba! Belgeyle ilgili bir soru sorarsan yüklediğin içerikten yanıtlayabilirim."
+
             if system_prompt is None:
-                system_prompt = """Sen yardımcı bir asistansın. Soruları YALNIZCA verilen bağlam (context) bilgisine göre cevapla.
-Eğer bağlamda ilgili bilgi yoksa, 'Bu soruya verilen belgeler üzerinden cevap veremiyorum.' de.
-Cevabını soru hangi dildeyse o dilde ver."""
+                system_prompt = """Sen DocuMind asistanısın.
+Öncelik: Kullanıcının sorusu belgeyle ilgiliyse SADECE verilen Bağlam'a dayanarak cevap ver.
+Bağlam yetersizse: "Bu soruya verilen belgeler üzerinden cevap veremiyorum." de.
+Eğer soru selamlaşma veya genel sohbetse, kısa ve nazikçe cevap verebilirsin.
+Cevabı sorunun dilinde yaz."""
+
+            print(f"[ollama] CTX_LEN: {len(context or '')}, CTX_PREVIEW: {(context or '')[:200]}")
 
             full_prompt = f"""{system_prompt}
 
@@ -40,7 +52,7 @@ Cevap:"""
                         "options": {
                             "temperature": 0.7,
                             "top_p": 0.9,
-                            "num_predict": 1024
+                            "num_predict": 2048  # Artırıldı
                         }
                     }
                 )
