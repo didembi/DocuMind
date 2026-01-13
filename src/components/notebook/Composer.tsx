@@ -67,7 +67,7 @@ export function Composer({
             ) : (
               <FileText className="h-3 w-3" />
             )}
-            Kisa Ozet
+            Kısa Özet
           </Button>
           <Button
             variant="outline"
@@ -81,7 +81,7 @@ export function Composer({
             ) : (
               <BookOpen className="h-3 w-3" />
             )}
-            Detayli Ozet
+            Detaylı Özet
           </Button>
         </div>
 
@@ -133,7 +133,7 @@ export function Composer({
           onKeyDown={handleKeyDown}
           placeholder={
             searchMode === 'keyword'
-              ? 'Anahtar kelime yazin...'
+              ? 'Anahtar kelime yazın...'
               : 'Sorunuzu sorun...'
           }
           className="min-h-[60px] max-h-[120px] resize-none"
@@ -154,7 +154,7 @@ export function Composer({
         </Button>
       </div>
       <p className="text-xs text-muted-foreground mt-2">
-        Enter ile gonderin, Shift+Enter ile yeni satir
+        Enter ile gönderin, Shift+Enter ile yeni satır oluşturun
       </p>
     </div>
   );

@@ -162,7 +162,7 @@ export function Notebook() {
   const handleShortSummary = async () => {
     const documentIds = getDocumentIds();
     if (documentIds.length === 0) {
-      toast.error('Ozet olusturmak icin belge yukleyin');
+      toast.error('Özet oluşturmak için belge yükleyin');
       return;
     }
 
@@ -172,7 +172,7 @@ export function Notebook() {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: 'Kisa ozet olustur',
+      content: 'Kısa özet oluştur',
       createdAt: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
@@ -206,15 +206,15 @@ export function Notebook() {
       saveMessage(assistantMessage);
 
       if (response.cached) {
-        toast.info('Onbellekteki ozet kullanildi');
+        toast.info('Onbellekteki özet kullanıldı');
       }
     } catch (error) {
-      toast.error(`Ozet olusturulamadi: ${error}`);
+      toast.error(`Özet oluşturulamadı: ${error}`);
 
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Uzgunum, ozet olustururken bir hata olustu.',
+        content: 'Üzgünüm, özet oluştururken bir hata oluştu.',
         createdAt: new Date(),
       };
 
@@ -227,7 +227,7 @@ export function Notebook() {
   const handleLongSummary = async () => {
     const documentIds = getDocumentIds();
     if (documentIds.length === 0) {
-      toast.error('Ozet olusturmak icin belge yukleyin');
+      toast.error('Özet oluşturmak için belge yükleyin');
       return;
     }
 
@@ -237,7 +237,7 @@ export function Notebook() {
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: 'Detayli ozet olustur',
+      content: 'Detaylı özet oluştur',
       createdAt: new Date(),
     };
     setMessages((prev) => [...prev, userMessage]);
