@@ -1,17 +1,20 @@
-# DocuMind Frontend
+# DocuMind
 
-**AI-powered document assistant** - NotebookLM benzeri bir belge yönetimi ve soru-cevap platformu.
+**AI-powered document assistant** - NotebookLM benzeri bir tam yığın belge yönetimi ve soru-cevap platformu.
 
-![Tech Stack](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)
+![Tech Stack](https://img.shields.io/badge/React-19+-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6?style=flat-square&logo=typescript)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688?style=flat-square&logo=fastapi)
+![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase)
+![Gemini](https://img.shields.io/badge/Gemini-1.5+-4285F4?style=flat-square&logo=google)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.0+-06B6D4?style=flat-square&logo=tailwindcss)
-![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=flat-square&logo=vite)
+![Vite](https://img.shields.io/badge/Vite-7.0+-646CFF?style=flat-square&logo=vite)
 
 ---
 
 ## ✨ Özellikler
 
-### MVP Özellikleri (Tamamlandı ✅)
+### ✅ Tamamlanan Özellikler
 
 - **Not Defteri Yönetimi**
   - Yeni not defteri oluşturma (2-adımlı modal)
@@ -22,14 +25,17 @@
 - **Kaynak Yönetimi**
   - PDF/DOCX/TXT dosya yükleme (drag & drop)
   - Metin yapıştırma (live preview ile)
-  - Kaynak silme
-  - Kaynak listesi görüntüleme
+  - Dosya işleme (PDF parsing, chunking)
+  - Embedding oluşturma (Gemini AI)
+  - Vektör veritabanı (Supabase pgvector)
+  - Kaynak silme ve listesi görüntüleme
 
-- **Sohbet Arayüzü**
-  - Soru-cevap chat interface
+- **AI-Powered Sohbet**
+  - Gerçek zamanlı soru-cevap
+  - Bağlamsal yanıtlar (RAG - Retrieval Augmented Generation)
+  - Kaynak bazlı yanıtlar
+  - Streaming responses
   - Message bubbles (user/assistant)
-  - Otomatik scroll
-  - Demo AI responses
 
 - **UI/UX**
   - Dark mode (navy-purple gradient)
@@ -39,8 +45,7 @@
   - Responsive design (mobile/tablet/desktop)
   - Toast notifications (sonner)
   - Keyboard shortcuts (Esc, Enter)
-  - Empty states
-  - Loading states
+  - Empty states ve loading states
 
 ---
 
@@ -48,56 +53,104 @@
 
 ### Gereksinimler
 
-- Node.js 18+
-- npm veya yarn
+- **Frontend:** Node.js 18+, npm/yarn
+- **Backend:** Python 3.9+, Supabase hesabı, Gemini API key
 
-### Kurulum
+### 1️⃣ Frontend Kurulumu (5 dakika)
 
 ```bash
+# Proje klasöründe
+cd C:\Users\ddmbi\Desktop\DocuMind
+
 # Bağımlılıkları yükle
 npm install
 
 # Development server başlat
 npm run dev
-
-# Browser'da aç
-open http://localhost:5173
 ```
 
-### Production Build
+**Frontend:** http://localhost:5173 ✅
 
+### 2️⃣ Backend Kurulumu (10 dakika)
+
+#### Supabase Kurulumu
+1. [supabase.com](https://supabase.com) → Hesap oluştur
+2. "New Project" → Proje oluştur
+3. SQL Editor → `documind-backend/supabase_schema.sql` içeriğini yapıştır → Run
+4. Settings → API → URL ve Keys'leri kopyala
+
+#### Gemini API Key
+1. [Google AI Studio](https://makersuite.google.com/app/apikey) → API key oluştur
+2. Key'i kopyala
+
+#### Backend Setup
+```powershell
+# Execution policy ayarla
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Setup scriptini çalıştır
+.\backend-setup.ps1
+```
+
+#### Environment Variables
 ```bash
-# Build al
-npm run build
-
-# Preview
-npm run preview
+cd documind-backend
+notepad .env
 ```
+
+Aşağıdaki değerleri düzenle:
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+#### Backend Başlat
+```powershell
+cd documind-backend
+.\venv\Scripts\Activate
+python -m uvicorn app.main:app --reload
+```
+
+**Backend:** http://localhost:8000 ✅
+
+### 3️⃣ Test Et
+
+1. **Frontend:** http://localhost:5173
+2. **Backend API Docs:** http://localhost:8000/docs
+3. **Health Check:** http://localhost:8000/health
 
 ---
 
 ## 📁 Proje Yapısı
 
 ```
-src/
-├── components/
-│   ├── ui/                 # shadcn/ui component'leri
-│   ├── layout/             # Layout component'leri
-│   ├── home/               # Home page component'leri
-│   ├── notebook/           # Notebook page component'leri
-│   └── common/             # Ortak component'ler
-├── pages/
-│   ├── Home.tsx            # Ana sayfa
-│   └── Notebook.tsx        # Notebook detay
-├── hooks/
-│   ├── useNotebooks.ts
-│   └── NotebooksContext.tsx
-├── types/
-│   └── index.ts
-├── data/
-│   └── seed.ts
-└── lib/
-    └── utils.ts
+DocuMind/
+├── src/                          # React Frontend
+│   ├── components/
+│   │   ├── ui/                   # shadcn/ui components
+│   │   ├── layout/               # Layout components
+│   │   ├── home/                 # Home page components
+│   │   ├── notebook/             # Notebook page components
+│   │   └── common/               # Shared components
+│   ├── pages/                    # Page components
+│   ├── hooks/                    # React hooks
+│   ├── services/                 # API services
+│   ├── types/                    # TypeScript types
+│   ├── lib/                      # Utilities
+│   └── data/                     # Seed data
+├── documind-backend/             # FastAPI Backend
+│   ├── app/
+│   │   ├── routes/               # API endpoints
+│   │   ├── services/             # Business logic
+│   │   ├── models/               # Data models
+│   │   └── middleware/           # Middleware
+│   ├── tests/                    # Backend tests
+│   ├── migrations/               # Database migrations
+│   └── requirements.txt          # Python dependencies
+├── docs/                         # Documentation
+└── public/                       # Static assets
 ```
 
 ---
@@ -122,108 +175,133 @@ src/
 
 ---
 
-## 🧩 Component Kullanımı
-
-### CreateNotebookDialog (2-step modal)
-
-```tsx
-<CreateNotebookDialog
-  open={dialogOpen}
-  onOpenChange={setDialogOpen}
-  onCreate={(title, accent, sources) => {
-    const id = createNotebook(title, accent, sources);
-    navigate(`/notebook/${id}`);
-  }}
-/>
-```
-
-### Toast Notifications
-
-```tsx
-import { toast } from 'sonner';
-
-toast.success('Not defteri oluşturuldu');
-toast.error('Bir hata oluştu');
-```
-
----
-
-## 🔧 State Management
-
-Context API kullanılıyor (mock data).
-
-```tsx
-const {
-  notebooks,
-  createNotebook,
-  deleteNotebook,
-  updateNotebookTitle,
-  addSource,
-  removeSource,
-  getNotebook,
-} = useNotebooksContext();
-```
-
----
-
-## 🗺️ Rotalar
-
-```
-/                   → Home (notebook listesi)
-/notebook/:id       → Notebook detay (chat + sources)
-```
-
----
-
 ## 📦 Teknoloji Stack'i
 
-- **React 18** + **TypeScript**
-- **Vite** - Build tool
-- **TailwindCSS v3** - Styling
-- **shadcn/ui** - Components
-- **lucide-react** - Icons
+### Frontend
+- **React 19** + **TypeScript 5.9**
+- **Vite 7** - Build tool & dev server
+- **TailwindCSS v3** - Utility-first CSS
+- **shadcn/ui** - Component library
+- **Radix UI** - Unstyled UI primitives
+- **React Router v7** - Client-side routing
+- **Lucide React** - Beautiful icons
 - **Sonner** - Toast notifications
-- **React Router v6** - Routing
+
+### Backend
+- **FastAPI** - Modern Python web framework
+- **Supabase** - PostgreSQL + pgvector database
+- **Google Gemini 1.5** - AI language model
+- **LangChain** - LLM framework
+- **PyPDF2** - PDF processing
+- **python-multipart** - File uploads
+
+### DevOps & Tools
+- **Vitest** - Unit testing
+- **ESLint** - Code linting
+- **TypeScript** - Type checking
+- **Autoprefixer** - CSS vendor prefixes
 
 ---
 
-## 🎯 Sonraki Adımlar (Backend Entegrasyonu)
+## 🔧 API Endpoints
 
-### Phase 1: Backend Setup
-- [ ] FastAPI backend oluştur
-- [ ] Supabase PostgreSQL + pgvector setup
-- [ ] Gemini API entegrasyonu
-- [ ] LangChain PDF processing
+### Notebooks
+- `GET /api/notebooks` - List all notebooks
+- `POST /api/notebooks` - Create new notebook
+- `GET /api/notebooks/{id}` - Get notebook details
+- `PUT /api/notebooks/{id}` - Update notebook
+- `DELETE /api/notebooks/{id}` - Delete notebook
 
-### Phase 2: API Integration
-- [ ] `useNotebooks` hook'unu API çağrılarıyla değiştir
-- [ ] File upload endpoint'ini entegre et
-- [ ] Chat streaming API'yi bağla
+### Documents
+- `POST /api/notebooks/{id}/documents` - Upload document
+- `GET /api/notebooks/{id}/documents` - List documents
+- `DELETE /api/notebooks/{id}/documents/{doc_id}` - Delete document
 
-### Phase 3: Authentication
-- [ ] Supabase Auth ekle
-- [ ] Protected routes
+### Chat
+- `POST /api/notebooks/{id}/chat` - Send chat message
+- `GET /api/notebooks/{id}/chat/history` - Get chat history
 
----
-
-## 🧪 Test Checklist
-
-- [x] Home page 2 seed notebook gösteriyor
-- [x] "Yeni oluştur" → 2-step modal → notebook oluştur
-- [x] Notebook card'a tıkla → chat sayfası aç
-- [x] Kebab menu → "Başlığı düzenle" / "Sil"
-- [x] Toast notifications çalışıyor
-- [x] Responsive design
-- [x] Glassmorphism efektleri
-- [x] Keyboard shortcuts
+### Health
+- `GET /health` - Health check endpoint
 
 ---
 
-## 🐛 Bilinen Sorunlar
+## 🧪 Test Durumu
 
-- Demo AI responses (backend entegre edilince düzelecek)
-- Dosya yükleme fake (gerçek upload backend'de)
+### ✅ Tamamlanan Testler
+- [x] Frontend unit tests (Vitest + React Testing Library)
+- [x] Backend API endpoint tests
+- [x] PDF processing tests
+- [x] Supabase connection tests
+- [x] Gemini AI integration tests
+
+### Test Komutları
+```bash
+# Frontend tests
+npm run test
+npm run test:run
+npm run test:coverage
+
+# Backend tests
+cd documind-backend
+python -m pytest tests/
+```
 
 ---
 
-**Built with ❤️ using React, TypeScript, and TailwindCSS**
+## 🚀 Production Deployment
+
+### Frontend Build
+```bash
+npm run build
+npm run preview
+```
+
+### Backend Deployment
+```bash
+# Environment variables ayarla
+cp documind-backend/.env.example documind-backend/.env
+
+# Production server başlat
+cd documind-backend
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## 🐛 Bilinen Sorunlar & TODO
+
+### Minor Issues
+- File upload progress indicator eklenebilir
+- Chat message timestamps gösterilebilir
+- Bulk document operations implement edilebilir
+
+### Future Enhancements
+- [ ] User authentication (Supabase Auth)
+- [ ] Document versioning
+- [ ] Advanced search filters
+- [ ] Export chat history
+- [ ] Multi-language support
+
+---
+
+## 📚 Ek Dokümantasyon
+
+- [Backend Integration Guide](BACKEND-INTEGRATION.md) - Detaylı backend entegrasyon adımları
+- [Quick Start Guide](QUICK-START.md) - 3 adımda kurulum
+- [Test Guide](TEST_GUIDE.md) - Test stratejisi ve örnekler
+- [API Documentation](http://localhost:8000/docs) - Interactive API docs (FastAPI)
+
+---
+
+## 🤝 Katkıda Bulunma
+
+1. Fork edin
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Commit edin (`git commit -m 'Add amazing feature'`)
+4. Push edin (`git push origin feature/amazing-feature`)
+5. Pull Request açın
+
+---
+
+**Built with ❤️ using React, TypeScript, FastAPI, Supabase, and Gemini AI**
