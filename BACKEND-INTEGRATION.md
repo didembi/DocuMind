@@ -11,9 +11,11 @@ Bu rehber, DocuMind frontend'ini backend ile entegre etmek için adım adım tal
 - Yeni proje oluştur
 - PostgreSQL database otomatik oluşturulacak
 
-### 2. Gemini API Key
-- Google AI Studio: https://makersuite.google.com/app/apikey
-- API key oluştur (ücretsiz tier mevcut)
+### 2. Ollama Kurulumu
+- Ollama: https://ollama.ai
+- Ollama indir ve kur
+- Model indir: `ollama pull gemma3:4b`
+- Ollama servisini başlat: `ollama serve`
 
 ### 3. Python
 - Python 3.9 veya üzeri
@@ -40,7 +42,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 - `documind-backend` klasörü oluştur
 - Folder structure kur
 - Virtual environment oluştur
-- Dependencies kur (FastAPI, Supabase, Gemini, vb.)
+- Dependencies kur (FastAPI, Supabase, Ollama, vb.)
 - `.env` dosyası oluştur
 
 ### Adım 2: Supabase Database Kur
@@ -68,9 +70,9 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    - `anon public` key kopyala
    - `service_role` key kopyala (güvenli!)
 
-2. **Gemini API Key**
-   - https://makersuite.google.com/app/apikey
-   - API key oluştur ve kopyala
+2. **Ollama Kurulumu**
+   - Ollama kurulu ve çalışıyor mu kontrol et: `ollama list`
+   - Model yüklü mü: `ollama pull gemma3:4b`
 
 3. **.env Dosyasını Düzenle**
 
@@ -92,8 +94,12 @@ SUPABASE_URL=https://[PROJECT-ID].supabase.co
 SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # anon key
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # service_role key
 
-# Gemini API (KENDİ KEYİNİZLE DEĞİŞTİRİN)
-GEMINI_API_KEY=AIzaSy...
+# Ollama (Local LLM)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma3:4b
+
+# Embedding (Local)
+EMBEDDING_MODEL=all-MiniLM-L6-v2
 
 # JWT (ÜRETİN VEYA DEĞİŞTİRİN)
 JWT_SECRET_KEY=super-secret-key-change-this-in-production-12345
@@ -381,14 +387,15 @@ npm run dev
 3. API keys geçerli mi?
 4. RLS (Row Level Security) politikaları doğru mu?
 
-### Gemini API Error
+### Ollama Connection Error
 
-**Hata:** `Embedding failed` veya `Answer generation failed`
+**Hata:** `Could not connect to Ollama` veya `Answer generation failed`
 
 **Çözüm:**
-1. Gemini API key geçerli mi?
-2. Quota doldu mu? (ücretsiz tier limitli)
-3. API key aktif mi?
+1. Ollama çalışıyor mu? (`ollama serve`)
+2. Model yüklü mü? (`ollama pull gemma3:4b`)
+3. Ollama servisi localhost:11434'te çalışıyor mu?
+4. Model adı doğru mu? (OLLAMA_MODEL=gemma3:4b)
 
 ---
 
@@ -417,7 +424,9 @@ npm run dev
 - [ ] Supabase database kuruldu
 - [ ] pgvector extension aktif
 - [ ] Tablolar oluşturuldu (documents, document_chunks, queries)
-- [ ] `.env` dosyası düzenlendi (Supabase, Gemini keys)
+- [ ] `.env` dosyası düzenlendi (Supabase, Ollama ayarları)
+- [ ] Ollama kurulu ve çalışıyor
+- [ ] Model indirildi (gemma3:4b)
 - [ ] API client oluşturuldu (`src/services/api.ts`)
 - [ ] File upload backend'e bağlandı
 - [ ] Chat query backend'e bağlandı

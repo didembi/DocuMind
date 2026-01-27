@@ -95,8 +95,12 @@ SUPABASE_URL=https://[YOUR-PROJECT].supabase.co
 SUPABASE_KEY=your-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
-# Gemini API
-GEMINI_API_KEY=your-gemini-api-key-here
+# Ollama (Local LLM)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma3:4b
+
+# Embedding (Local)
+EMBEDDING_MODEL=all-MiniLM-L6-v2
 
 # JWT
 JWT_SECRET_KEY=your-super-secret-key-change-in-production
@@ -174,7 +178,7 @@ Write-Host "✅ Dependencies installed" -ForegroundColor Green
 
 Write-Host "`n✨ ✨ ✨ SETUP COMPLETE! ✨ ✨ ✨" -ForegroundColor Green
 Write-Host "`n📋 Next steps:" -ForegroundColor Cyan
-Write-Host "1. Edit .env with your real values (Supabase, Gemini API)" -ForegroundColor White
+Write-Host "1. Edit .env with your real values (Supabase, Ollama)" -ForegroundColor White
 Write-Host "2. Run SQL schema in Supabase (see supabase-schema.sql)" -ForegroundColor White
 Write-Host "3. Start backend: python -m uvicorn app.main:app --reload" -ForegroundColor White
 Write-Host "4. Check health: http://localhost:8000/health" -ForegroundColor White

@@ -1,65 +1,107 @@
 # DocuMind Backend Setup Instructions
 
-## ✅ Completed Steps
-
-1. ✅ Supabase URL corrected in `.env`
-2. ✅ Service role key configured
-3. ✅ Supabase connection verified
+Bu rehber, DocuMind backend'ini lokal olarak çalıştırmak için adım adım talimatlar içerir.
 
 ---
 
-## 🚨 Required Actions
+## 📋 Prerequisites
 
-### 1. Create Database Tables in Supabase
+### 1. Python Environment
+- Python 3.9 veya üzeri
+- pip package manager
 
-Your Supabase connection is working, but you need to create all required tables:
+### 2. Supabase Account
+- [supabase.com](https://supabase.com) → Create account
+- Create new project
+- PostgreSQL database will be created automatically
 
-1. Go to [Supabase Dashboard](https://app.supabase.com/project/tenefjccumgmwwtucbzr)
-2. Navigate to **SQL Editor** (left sidebar)
-3. Click **New Query**
-4. Copy the entire contents of `supabase-schema.sql`
-5. Paste into the SQL editor
-6. Click **Run** (or press Ctrl+Enter)
-7. Verify you see: `"Database schema created successfully!"`
-
-**Expected tables created:**
-- `users` - User management
-- `documents` - Document metadata
-- `document_chunks` - Text chunks with vector embeddings
-- `queries` - User questions
-- `answers` - AI responses
-
-**Expected functions:**
-- `match_document_chunks` - Vector similarity search
-- `update_updated_at` - Auto-update timestamps
+### 3. Ollama Installation
+- Download Ollama: [ollama.ai](https://ollama.ai)
+- Install and run Ollama
+- Pull model: `ollama pull gemma3:4b`
+- Start Ollama service: `ollama serve`
 
 ---
 
-### 2. Fix Gemini API Quota Issue
+## 🚀 Backend Setup (Windows)
 
-**Current Error:**
+### Step 1: Run PowerShell Script
+
+```powershell
+# In DocuMind folder
+cd C:\Users\ddmbi\Desktop\DocuMind
+
+# Set execution policy (if needed)
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+# Run setup script
+.\backend-setup.ps1
 ```
-429 You exceeded your current quota, please check your plan and billing details.
-Quota: 0 requests remaining for embedding-001
+
+**Note:** The script will:
+- Create `documind-backend` folder
+- Set up folder structure
+- Create virtual environment
+- Install dependencies (FastAPI, Supabase, Ollama, etc.)
+- Create `.env` file
+
+### Step 2: Set Up Supabase Database
+
+1. **Go to Supabase Dashboard**
+   - https://app.supabase.com
+
+2. **Create Database Schema**
+   - Go to SQL Editor
+   - Copy contents of `supabase-schema.sql`
+   - Click Run
+
+3. **Get API Keys**
+   - Settings → API → Keys
+   - Copy Project URL
+   - Copy `anon public` key
+   - Copy `service_role` key (keep secure!)
+
+### Step 3: Configure Ollama
+
+1. **Install Ollama**
+   - Download from [ollama.ai](https://ollama.ai)
+   - Install and run
+
+2. **Pull Model**
+   ```bash
+   ollama pull gemma3:4b
+   ```
+
+3. **Start Ollama Service**
+   ```bash
+   ollama serve
+   ```
+
+### Step 4: Edit Environment Variables
+
+```bash
+cd documind-backend
+notepad .env
 ```
 
-**Solutions:**
+**Edit these values:**
+```env
+# Supabase (REPLACE WITH YOUR VALUES)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-ID].supabase.co:5432/postgres
+SUPABASE_URL=https://[PROJECT-ID].supabase.co
+SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # anon key
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...  # service_role key
 
-**Option A: Wait for Reset (Free Tier)**
-- Free tier quota resets daily
-- Wait until tomorrow and try again
-- Check current usage: [https://ai.dev/rate-limit](https://ai.dev/rate-limit)
+# Ollama (Local LLM)
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma3:4b
 
-**Option B: Upgrade to Paid Plan**
-1. Go to [Google AI Studio](https://aistudio.google.com/)
-2. Navigate to **Billing** settings
-3. Enable paid tier (pay-as-you-go)
-4. Generate a new API key
-5. Update `GEMINI_API_KEY` in `.env`
+# Embedding (Local)
+EMBEDDING_MODEL=all-MiniLM-L6-v2
 
-**Option C: Use Alternative Model (Temporary)**
-- Edit `app/config.py` to use a different model
-- Change `GEMINI_EMBEDDING_MODEL` to another available model
+# JWT (GENERATE OR CHANGE)
+JWT_SECRET_KEY=your-super-secret-key-change-in-production
+```
 
 ---
 
@@ -78,88 +120,89 @@ python test_connection.py
 
 **Expected output:**
 ```
-✅ SUPABASE_URL: https://tenefjccumgmwwtucbzr.s...
-✅ SUPABASE_KEY: seyJ...
-✅ GEMINI_API_KEY: AIza...
-✅ Connected! Documents count: 0
-✅ Gemini API working! Embedding size: 768
+🔍 Testing Backend Configuration...
+
+1️⃣ Checking Environment Variables:
+   ✅ SUPABASE_URL: https://tenefjccumgmwwtucbzr.s...
+   ✅ SUPABASE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   ✅ OLLAMA_BASE_URL: http://localhost:11434
+   ✅ OLLAMA_MODEL: gemma3:4b
+
+2️⃣ Testing Supabase Connection:
+   Using service role key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   ✅ Connected! Documents count: 0
+
+3️⃣ Testing Ollama Connection:
+   ✅ Ollama working! Model 'gemma3:4b' is available
+   Available models: ['gemma3:4b', ...]
+
 🎉 All tests passed! Backend is ready to use.
 ```
 
-### Step 3: Test PDF Upload from Frontend
+### Step 3: Test from Frontend
 1. Open frontend: `http://localhost:5173`
-2. Click "Yeni oluştur" (New notebook)
-3. Upload a small PDF file
-4. Watch backend console for processing logs
+2. Create a notebook
+3. Upload a PDF
+4. Ask a question - should get AI response
 
 ---
 
 ## 🔧 Troubleshooting
 
-### If PDF Upload Still Fails
+### Ollama Connection Issues
 
-Check backend logs for specific errors:
-```
-INFO: 127.0.0.1:xxxxx - "POST /api/v1/documents/upload HTTP/1.1" 500
-```
+**Error:** `Could not connect to Ollama`
 
-Common issues:
-1. **Gemini quota exceeded** → Wait or upgrade
-2. **Table not found** → Run SQL schema
-3. **RLS policy error** → Service role key should bypass this
-4. **Vector extension missing** → Run `CREATE EXTENSION IF NOT EXISTS vector;`
+**Solutions:**
+1. Is Ollama running? (`ollama serve`)
+2. Is model downloaded? (`ollama pull gemma3:4b`)
+3. Check OLLAMA_BASE_URL in `.env` (should be `http://localhost:11434`)
+4. Check OLLAMA_MODEL in `.env` (should be `gemma3:4b`)
 
-### Verify Database Tables Exist
-```sql
--- Run in Supabase SQL Editor
-SELECT table_name
-FROM information_schema.tables
-WHERE table_schema = 'public'
-ORDER BY table_name;
-```
+### Supabase Connection Issues
 
-Expected output:
-- answers
-- document_chunks
-- documents
-- queries
-- users
+**Error:** `Could not connect to Supabase`
 
----
+**Solutions:**
+1. Check `.env` values
+2. Is Supabase project URL correct?
+3. Are API keys valid?
+4. Check RLS (Row Level Security) policies
 
-## 📋 Current Status
+### Common Issues Table
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Supabase Connection | ✅ Working | Using service role key |
-| Database URL | ✅ Correct | `db.tenefjccumgmwwtucbzr.supabase.co` |
-| Database Tables | ⚠️ Unknown | Need to run schema |
-| Gemini API Key | ⚠️ Quota Exceeded | Wait or upgrade |
-| Backend Server | 🟡 Ready | Needs restart after schema setup |
-| Frontend | ✅ Ready | Listening on port 5173 |
+| Issue | Status | Solution |
+|-------|--------|----------|
+| Ollama not running | ❌ Not running | `ollama serve` |
+| Model not downloaded | ❌ Model missing | `ollama pull gemma3:4b` |
+| Wrong model name | ❌ Wrong config | Check OLLAMA_MODEL in `.env` |
+| Supabase keys invalid | ❌ Auth failed | Regenerate keys in Supabase |
 
 ---
 
-## 🎯 Next Steps (In Order)
+## 📊 API Endpoints
 
-1. **Run SQL schema in Supabase** (5 minutes)
-2. **Wait for Gemini quota reset** OR **upgrade plan** (varies)
-3. **Restart backend server** (1 minute)
-4. **Test PDF upload** (2 minutes)
+Once running, visit: `http://localhost:8000/docs`
+
+### Notebooks
+- `GET /api/notebooks` - List notebooks
+- `POST /api/notebooks` - Create notebook
+- `GET /api/notebooks/{id}` - Get notebook
+- `PUT /api/notebooks/{id}` - Update notebook
+- `DELETE /api/notebooks/{id}` - Delete notebook
+
+### Documents
+- `POST /api/notebooks/{id}/documents` - Upload document
+- `GET /api/notebooks/{id}/documents` - List documents
+- `DELETE /api/notebooks/{id}/documents/{doc_id}` - Delete document
+
+### Chat
+- `POST /api/notebooks/{id}/chat` - Send message
+- `GET /api/notebooks/{id}/chat/history` - Get history
+
+### Health
+- `GET /health` - Health check
 
 ---
 
-## 📞 Support
-
-If you encounter errors:
-1. Check backend console logs
-2. Check browser console (F12)
-3. Verify `.env` file has correct values
-4. Run `python test_connection.py` to diagnose
-
----
-
-**Generated:** 2026-01-09
-**Backend URL:** http://localhost:8000
-**Frontend URL:** http://localhost:5173
-**Supabase Project:** tenefjccumgmwwtucbzr
+**Success! 🎉** Your DocuMind backend is now ready to use!
