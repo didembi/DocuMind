@@ -59,9 +59,9 @@ class OllamaClient:
         q_lower = q.lower()
         ctx = (context or "").strip()
 
-        # ✅ Selamlaşma istisnası: SADECE context boşken devreye girsin
-        if (not ctx) and (q_lower in self.smalltalk):
-            return "Merhaba!  Belgeyle ilgili bir soru sorarsan yüklediğin içerikten yanıtlayabilirim."
+        # ✅ Selamlaşma istisnası: Context olsa bile smalltalk'a cevap ver
+        if q_lower in self.smalltalk:
+            return "Merhaba! Ben DocuMind asistanıyım. Yüklediğin belgeler hakkında sorularını yanıtlayabilirim. Ne öğrenmek istersin?"
 
         # Context çok uzunsa kırp
         ctx = self._truncate(ctx, self.max_ctx_chars_chat)
@@ -72,7 +72,8 @@ Sen DocuMind asistanısın.
 Kural 1: Kullanıcının sorusu belgeyle ilgiliyse SADECE verilen Bağlam'a dayanarak cevap ver.
 Kural 2: Bağlam yetersizse şu cümleyi kullan: "Bu soruya verilen belgeler üzerinden cevap veremiyorum."
 Kural 3: Cevabı kısa, net ve görev-odaklı yaz. Cevap dili sorunun diliyle aynı olsun.
-Kural 4: Cevabın sonunda MUTLAKA hangi kaynağı kullandığını belirt. Format: "📄 Kaynak: [Belge adı], [Konum]"
+Kural 4: Cevabın sonunda hangi kaynağı kullandığını belirt. Format: "Kaynak: [Belge adı], [Konum]"
+Kural 5: ASLA markdown formatı kullanma. Yıldız (*), alt çizgi (_), başlık (#), madde işareti (-) gibi markdown sembolleri KULLANMA. Düz metin yaz.
 """
 
         # Kaynakları prompt içine eklemek istersen
@@ -150,13 +151,9 @@ Sen DocuMind özetleyicisisin.
 Doküman adı: {document_name}
 
 Görev: KISA özet üret.
-Format:
-- 1 paragraf genel özet
-- ardından en önemli 5 madde (• ile)
-Kurallar:
-- Sadece doküman içeriğine dayan
-- Uydurma bilgi ekleme
-- Türkçe yaz
+Format: 1 paragraf genel özet yaz, ardından en önemli 5 noktayı numaralandırarak listele.
+Kurallar: Sadece doküman içeriğine dayan. Uydurma bilgi ekleme. Türkçe yaz.
+ÖNEMLİ: Markdown formatı KULLANMA. Yıldız, alt çizgi, başlık işareti gibi semboller kullanma. Düz metin yaz.
 """
         else:
             text = self._truncate(text, self.max_ctx_chars_summary_long)
@@ -167,15 +164,9 @@ Sen DocuMind özetleyicisisin.
 Doküman adı: {document_name}
 
 Görev: DETAYLI özet üret.
-Format:
-1) Genel Bakış
-2) Ana Konular (alt başlıklarla)
-3) Önemli Noktalar (madde listesi)
-4) Sonuç
-Kurallar:
-- Sadece doküman içeriğine dayan
-- Uydurma bilgi ekleme
-- Türkçe yaz
+Format: Şu sırayla yaz: Genel Bakış, Ana Konular, Önemli Noktalar, Sonuç. Her bölümü paragraf olarak yaz.
+Kurallar: Sadece doküman içeriğine dayan. Uydurma bilgi ekleme. Türkçe yaz.
+ÖNEMLİ: Markdown formatı KULLANMA. Yıldız, alt çizgi, başlık işareti gibi semboller kullanma. Düz metin yaz.
 """
 
         full_prompt = f"""{system_prompt.strip()}

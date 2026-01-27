@@ -313,16 +313,19 @@ export function Notebook() {
 
       let resultContent = '';
       if (response.total === 0) {
-        resultContent = `"${query}" icin sonuc bulunamadi.`;
+        resultContent = `"${query}" için sonuç bulunamadı.`;
       } else {
-        resultContent = `"${query}" icin ${response.total} sonuc bulundu:\n\n`;
+        const resultCount = Math.min(response.total, 5);
+        resultContent = `"${query}" için ${response.total} sonuç bulundu. İlk ${resultCount} sonuç:\n\n`;
         response.results.slice(0, 5).forEach((r, i) => {
           const location = r.page !== null
             ? `Sayfa ${r.page}`
             : r.line_start !== null
-              ? `Satir ${r.line_start}-${r.line_end}`
-              : `Bolum ${r.chunk_index}`;
-          resultContent += `${i + 1}. [${location}]\n${r.preview}\n\n`;
+              ? `Satır ${r.line_start}-${r.line_end}`
+              : `Bölüm ${r.chunk_index}`;
+          // Preview'daki markdown işaretlerini temizle
+          const cleanPreview = r.preview.replace(/\*\*/g, '').replace(/\*/g, '').replace(/_/g, '').trim();
+          resultContent += `[${i + 1}] ${location}: ${cleanPreview.substring(0, 150)}${cleanPreview.length > 150 ? '...' : ''}\n\n`;
         });
       }
 
